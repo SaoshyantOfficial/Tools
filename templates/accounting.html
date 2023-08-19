@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Accounting</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='accounting.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <h1 class="header">Expense Tracker</h1>
+  <form action="{{ url_for('add_expense') }}" method="POST">
+    <div class="form-group">
+      <label for="topic">Topic:</label>
+      <input type="text" id="topic" name="topic" required>
+    </div>
+    <div class="form-group">
+      <label for="value">Value:</label>
+      <input type="number" id="value" name="value" required>
+    </div>
+    <div class="form-group">
+      <input type="submit" value="Add Expense">
+    </div>
+  </form>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Topic</th>
+          <th>Value</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for expense in expenses %}
+        <tr>
+          <td>{{ expense[0] }}</td>
+          <td>{{ expense[1] }}</td>
+          <td>{{ expense[2] }}</td>
+          <td>
+            <form action="{{ url_for('remove_expense', id=expense[0]) }}" method="POST">
+              <input type="hidden" name="_method" value="DELETE">
+              <input type="submit" value="Remove">
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="total-expenses">Total Expenses: {{ total }}</h2>
+
+  <!-- Second Table -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Topic</th>
+          <th>Total Expense</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic, expense in unique_expenses.items() %}
+        <tr>
+          <td>{{ topic }}</td>
+          <td>{{ expense }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <!-- Back Button -->
+    <a href="{{ url_for('index') }}" class="back-button">Main Page</a>
+  </div>
+</body>
+
+</html>

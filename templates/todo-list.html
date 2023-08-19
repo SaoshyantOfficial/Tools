@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>To-Do List</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='todo-list.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <div class="container">
+        <h1>To-Do List</h1>
+        <form action="/todo-list" method="POST" id="todo-form">
+            <input type="text" name="activity" id="activity" placeholder="Add a new task" required>
+            <button type="submit">Add</button>
+        </form>
+        <table id="todo-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Task</th>
+                    <th>Completed</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in activities %}
+                <tr{% if item.completed %} class="completed" {% endif %}>
+                    <td>{{ item[0] }}</td>
+                    <td>{{ item[1] }}</td>
+                    <td>
+                        <a href="/complete/{{ loop.index }}"><input type="checkbox" name="completed" {% if item[2]
+                                %}checked{% endif %} class="completion-checkbox"></a>
+                    </td>
+                    <td><a href="/delete/{{ loop.index }}"><i class="fas fa-trash"></i>✖️</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Back Button -->
+        <a href="{{ url_for('index') }}" class="back-button">Main Page</a>
+    </div>
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

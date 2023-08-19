@@ -1,0 +1,109 @@
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    margin-bottom: 20px;
+}
+
+#activity {
+    flex-grow: 1;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0px 0px 5px #ccc;
+}
+
+button[type="submit"] {
+    flex-basis: 100%;
+    padding: 10px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0px 0px 5px #ccc;
+}
+
+button[type="submit"]:hover {
+    background-color: #555;
+    ;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th,
+td {
+    text-align: center;
+    padding: 10px;
+    font-size: 18px;
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #2c3e50;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
+.completion-checkbox:hover {
+    cursor: pointer;
+}
+
+.completed label {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.completion-checkbox {
+    transform: scale(1.2);
+}
+
+.fa-trash {
+    color: #e74c3c;
+    font-size: 18px;
+}
+
+.back-button {
+    text-align: center;
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-top: 20px;
+}
