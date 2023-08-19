@@ -8,7 +8,7 @@ app.secret_key = '1236544'
 # Accounting page settings
 
 ACCOUNTING_DATABASE = 'expenses.db'
-USERNAMES = {'yasin': 'bita', 'saleh': 'barin', 'amir': 'adna', 'hamsara' : '1234'}
+USERNAMES = {'yasin': 'bita', 'saleh': 'fatemeh', 'amir': 'adna', 'hamsara' : '1234'}
 
 def get_db():
     """Get the SQLite database connection for the current thread."""
