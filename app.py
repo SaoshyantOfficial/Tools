@@ -98,13 +98,27 @@ def remove_expense(id):
 
 # TO-DO List settings
 
+def connect_db():
+    conn = sqlite3.connect(f'DataBases/ToDoList/{session.get("username")}_TodoList.db')
+    cursor = conn.cursor()
+    # Create table if it doesn't exist
+    cursor.execute('''CREATE TABLE IF NOT EXISTS daily_activities
+                    (id INTEGER PRIMARY KEY, activity text, completed INTEGER)''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS weekly_activities
+                    (id INTEGER PRIMARY KEY, activity text, completed INTEGER)''')
+    return conn
+    
 def fetch_activities():
     with connect_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM activities")
-        activities = cursor.fetchall()
+        cursor.execute("SELECT * FROM daily_activities")
+        daily_activities = cursor.fetchall()
 
-    return activities
+        cursor.execute("SELECT * FROM weekly_activities")
+        weekly_activities = cursor.fetchall()
+
+    return daily_activities, weekly_activities
 
 
 @app.route('/todoList/login', methods=['GET', 'POST'])
@@ -114,53 +128,75 @@ def todo_list_login():
         session["username"] = username
         password = request.form.get('password')
         if username in USERNAMES and USERNAMES[username] == password:
-            activities = fetch_activities()
-            return render_template('todo-list.html', activities=activities)
+            daily_activities, weekly_activities = fetch_activities()
+            return render_template('todo-list.html', daily_activities=daily_activities, weekly_activities=weekly_activities)
         else:
             flash("Invalid username or password", "error")
     return render_template('todoListLogin.html')
 
 
-def connect_db():
-    conn = sqlite3.connect(f'DataBases/ToDoList/{session.get("username")}_TodoList.db')
-    cursor = conn.cursor()
-    # Create table if it doesn't exist
-    cursor.execute('''CREATE TABLE IF NOT EXISTS activities
-                    (id INTEGER PRIMARY KEY, activity text, completed INTEGER)''')
-    return conn
 
 
-@app.route('/todo-list', methods=['GET', 'POST'])
-def todo_list():
+@app.route('/daily', methods=['GET', 'POST'])
+def daily():
     if request.method == 'POST':
-        activity = request.form['activity']
+        activity = request.form['daily_activity']
         completed = 0  # Initialize completed as False
         with connect_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO activities(activity, completed) VALUES (?, ?)", (activity, completed))
+            cursor.execute("INSERT INTO daily_activities(activity, completed) VALUES (?, ?)", (activity, completed))
 
-    activities = fetch_activities()
-    return render_template('todo-list.html', activities=activities)
+    daily_activities, weekly_activities = fetch_activities()
+    return render_template('todo-list.html', daily_activities=daily_activities, weekly_activities=weekly_activities)
+
+@app.route('/weekly', methods=['GET', 'POST'])
+def weekly():
+    if request.method == 'POST':
+        activity = request.form['weekly_activity']
+        completed = 0  # Initialize completed as False
+        with connect_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO weekly_activities(activity, completed) VALUES (?, ?)", (activity, completed))
+
+    daily_activities, weekly_activities = fetch_activities()
+    return render_template('todo-list.html', daily_activities=daily_activities, weekly_activities=weekly_activities)
 
 
-@app.route('/complete/<int:index>')
-def complete(index):
+@app.route('/daily_complete/<int:index>')
+def daily_complete(index):
     with connect_db() as conn:
         cursor = conn.cursor()
-        cursor.execute('UPDATE activities SET completed = 1 - completed WHERE id=?', (index,))
-    return redirect('/todo-list')
+        cursor.execute('UPDATE daily_activities SET completed = 1 - completed WHERE id=?', (index,))
+    return redirect('/daily')
 
 
-@app.route('/delete/<int:index>')
-def delete(index):
+@app.route('/daily_delete/<int:index>')
+def daily_delete(index):
     with connect_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM activities WHERE id=?", (index,))
-        cursor.execute("UPDATE activities SET id=id-1 WHERE id > ?", (index,))
+        cursor.execute("DELETE FROM daily_activities WHERE id=?", (index,))
+        cursor.execute("UPDATE daily_activities SET id=id-1 WHERE id > ?", (index,))
 
-    return redirect('/todo-list')
+    return redirect('/daily')
 
+
+@app.route('/weekly_complete/<int:index>')
+def weekly_complete(index):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('UPDATE weekly_activities SET completed = 1 - completed WHERE id=?', (index,))
+    return redirect('/daily')
+
+
+@app.route('/weekly_delete/<int:index>')
+def weekly_delete(index):
+    with connect_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM weekly_activities WHERE id=?", (index,))
+        cursor.execute("UPDATE weekly_activities SET id=id-1 WHERE id > ?", (index,))
+
+    return redirect('/daily')
 
 if __name__ == '__main__':
-    # app.run(debug=True)
-    serve(app, host='0.0.0.0', port=80)
+    app.run(debug=True)
+    # serve(app, host='0.0.0.0', port=80)
