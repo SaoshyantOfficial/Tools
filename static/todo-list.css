@@ -16,7 +16,6 @@ form {
     flex-wrap: wrap;
     justify-content: center;
     align-items: stretch;
-    margin-bottom: 20px;
 }
 
 #daily_activity, #weekly_activity {

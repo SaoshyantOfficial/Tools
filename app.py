@@ -1,9 +1,17 @@
 from flask import Flask, render_template, request, g, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+import os
+from werkzeug.utils import secure_filename
 import sqlite3
 from waitress import serve
 
 app = Flask(__name__)
 app.secret_key = '1236544'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///images.db'
+db = SQLAlchemy(app)
+UPLOAD_FOLDER = 'static/uploads'  # Name of the folder where uploaded images will be stored
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Accounting page settings
 
@@ -96,6 +104,8 @@ def remove_expense(id):
     return render_template('accounting.html', expenses=expenses, total=total, unique_expenses=unique_expenses)
 
 
+
+
 # TO-DO List settings
 
 def connect_db():
@@ -109,6 +119,7 @@ def connect_db():
                     (id INTEGER PRIMARY KEY, activity text, completed INTEGER)''')
     return conn
     
+
 def fetch_activities():
     with connect_db() as conn:
         cursor = conn.cursor()
@@ -134,9 +145,6 @@ def todo_list_login():
             flash("Invalid username or password", "error")
     return render_template('todoListLogin.html')
 
-
-
-
 @app.route('/daily', methods=['GET', 'POST'])
 def daily():
     if request.method == 'POST':
@@ -161,14 +169,12 @@ def weekly():
     daily_activities, weekly_activities = fetch_activities()
     return render_template('todo-list.html', daily_activities=daily_activities, weekly_activities=weekly_activities)
 
-
 @app.route('/daily_complete/<int:index>')
 def daily_complete(index):
     with connect_db() as conn:
         cursor = conn.cursor()
         cursor.execute('UPDATE daily_activities SET completed = 1 - completed WHERE id=?', (index,))
     return redirect('/daily')
-
 
 @app.route('/daily_delete/<int:index>')
 def daily_delete(index):
@@ -179,14 +185,12 @@ def daily_delete(index):
 
     return redirect('/daily')
 
-
 @app.route('/weekly_complete/<int:index>')
 def weekly_complete(index):
     with connect_db() as conn:
         cursor = conn.cursor()
         cursor.execute('UPDATE weekly_activities SET completed = 1 - completed WHERE id=?', (index,))
-    return redirect('/daily')
-
+    return redirect('/weekly')
 
 @app.route('/weekly_delete/<int:index>')
 def weekly_delete(index):
@@ -194,9 +198,59 @@ def weekly_delete(index):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM weekly_activities WHERE id=?", (index,))
         cursor.execute("UPDATE weekly_activities SET id=id-1 WHERE id > ?", (index,))
+    return redirect('/weekly')
 
-    return redirect('/daily')
+
+
+
+
+
+# Storage page
+
+class Image(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(100))
+    filename = db.Column(db.String(100))
+
+
+@app.route('/storage/login', methods=['GET', 'POST'])
+def storage_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        session["username"] = username
+        password = request.form.get('password')
+        if username in USERNAMES and USERNAMES[username] == password:
+            images = Image.query.all()
+            return render_template('storage.html', images=images)
+        else:
+            flash("Invalid username or password", "error")
+    return render_template('storageLogin.html')
+
+@app.route('/storage', methods=['GET', 'POST'])
+def storage():
+    if request.method == 'POST':
+        description = request.form['description']
+        image = request.files['image']
+
+        if image and allowed_file(image.filename):
+            filename = secure_filename(image.filename)
+            image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            new_image = Image(description=description, filename=filename)
+            db.session.add(new_image)
+            db.session.commit()
+            return redirect(url_for('storage'))
+
+    images = Image.query.all()
+    return render_template('storage.html', images=images)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'jpg', 'jpeg', 'png', 'gif'}
+
+
+
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
     # serve(app, host='0.0.0.0', port=80)
