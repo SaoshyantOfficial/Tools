@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, g, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
 import sqlite3
@@ -8,8 +7,6 @@ from waitress import serve
 app = Flask(__name__)
 app.secret_key = '1236544'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///images.db'
-db = SQLAlchemy(app)
 UPLOAD_FOLDER = 'static/uploads'  # Name of the folder where uploaded images will be stored
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -207,11 +204,29 @@ def weekly_delete(index):
 
 # Storage page
 
-class Image(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.String(100))
-    filename = db.Column(db.String(100))
 
+def create_table():
+    conn = sqlite3.connect(f'DataBases/Storage/{session.get("username")}_storage.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS images
+                      (id INTEGER PRIMARY KEY, description TEXT, filename TEXT)''')
+    conn.commit()
+    conn.close()
+
+def insert_image(description, filename):
+    conn = sqlite3.connect(f'DataBases/Storage/{session.get("username")}_storage.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO images (description, filename) VALUES (?, ?)', (description, filename))
+    conn.commit()
+    conn.close()
+
+def get_all_images():
+    conn = sqlite3.connect(f'DataBases/Storage/{session.get("username")}_storage.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM images')
+    images = cursor.fetchall()
+    conn.close()
+    return images
 
 @app.route('/storage/login', methods=['GET', 'POST'])
 def storage_login():
@@ -219,8 +234,10 @@ def storage_login():
         username = request.form.get('username')
         session["username"] = username
         password = request.form.get('password')
+        # Replace this with your actual user validation logic
         if username in USERNAMES and USERNAMES[username] == password:
-            images = Image.query.all()
+            create_table()
+            images = get_all_images()
             return render_template('storage.html', images=images)
         else:
             flash("Invalid username or password", "error")
@@ -235,22 +252,25 @@ def storage():
         if image and allowed_file(image.filename):
             filename = secure_filename(image.filename)
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            new_image = Image(description=description, filename=filename)
-            db.session.add(new_image)
-            db.session.commit()
+            insert_image(description, filename)
             return redirect(url_for('storage'))
 
-    images = Image.query.all()
+    images = get_all_images()
     return render_template('storage.html', images=images)
+
+@app.route('/delete/<int:image_id>', methods=['POST'])
+def delete_image(image_id):
+    conn = sqlite3.connect(f'DataBases/Storage/{session.get("username")}_storage.db')
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM images WHERE id = ?', (image_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('storage'))
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'jpg', 'jpeg', 'png', 'gif'}
 
-
-
-
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
-    # serve(app, host='0.0.0.0', port=80)
+    # app.run(debug=True)
+    serve(app, host='0,0,0,0', port=5000)

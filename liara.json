@@ -3,6 +3,10 @@
     {
       "name": "disk1",
       "mountTo": "DataBases"
+    },
+    {
+      "name": "disk2",
+      "mountTo": "static"
     }
   ]
 }
