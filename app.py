@@ -234,7 +234,7 @@ def storage_login():
         username = request.form.get('username')
         session["username"] = username
         password = request.form.get('password')
-        # Replace this with your actual user validation logic
+
         if username in USERNAMES and USERNAMES[username] == password:
             create_table()
             images = get_all_images()
@@ -270,6 +270,69 @@ def delete_image(image_id):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'jpg', 'jpeg', 'png', 'gif'}
+
+
+
+
+# Records Page
+
+DATABASE = 'records.db'
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(f'DataBases/Records/{session.get("username")}_records.db')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                password TEXT NOT NULL,
+                description TEXT NOT NULL
+            )
+        ''')
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+@app.route('/records/login', methods=['GET', 'POST'])
+def records_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        session["username"] = username
+        password = request.form.get('password')
+
+        if username in USERNAMES and USERNAMES[username] == password:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute('SELECT * FROM records')
+            records = cursor.fetchall()
+            return render_template('records.html', records=records)
+        else:
+            flash("Invalid username or password", "error")
+
+    return render_template('recordsLogin.html')
+
+@app.route('/records/add', methods=['GET', 'POST'])
+def add():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        description = request.form['description']
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('INSERT INTO records (username, password, description) VALUES (?, ?, ?)', (username, password, description))
+        db.commit()
+        return redirect(url_for('add'))
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT * FROM records')
+    records = cursor.fetchall()
+    return render_template('records.html', records=records)
 
 if __name__ == '__main__':
     # app.run(debug=True)
