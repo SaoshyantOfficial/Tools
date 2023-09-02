@@ -12,8 +12,8 @@
         <h1>To-Do List</h1>
         <div class="buttons">
             <button id="daily-button" class="task-button active" data-task-type="daily">Daily Tasks</button>
-            <button id="weekly-button" class="task-button" data-task-type="weekly">Weekly Tasks</button>            
-        </div>        
+            <button id="weekly-button" class="task-button" data-task-type="weekly">Weekly Tasks</button>
+        </div>
         <form action="/daily" method="POST" id="todo-form">
             <input type="text" name="daily_activity" id="daily_activity" placeholder="Add a new task" required>
             <button type="submit" id="daily_button">Add</button>
@@ -37,8 +37,8 @@
                                 %}checked{% endif %} class="completion-checkbox"></a>
                     </td>
                     <td><a href="/daily_delete/{{ loop.index }}"><i class="fas fa-trash"></i>✖️</a></td>
-                </tr>
-                {% endfor %}
+                    </tr>
+                    {% endfor %}
             </tbody>
         </table>
 
@@ -62,12 +62,12 @@
                     <td>{{ item[0] }}</td>
                     <td>{{ item[1] }}</td>
                     <td>
-                        <a href="/weekly_complete/{{ loop.index }}"><input type="checkbox" name="completed" {% if item[2]
-                                %}checked{% endif %} class="completion-checkbox"></a>
+                        <a href="/weekly_complete/{{ loop.index }}"><input type="checkbox" name="completed" {% if
+                                item[2] %}checked{% endif %} class="completion-checkbox"></a>
                     </td>
                     <td><a href="/weekly_delete/{{ loop.index }}"><i class="fas fa-trash"></i>✖️</a></td>
-                </tr>
-                {% endfor %}
+                    </tr>
+                    {% endfor %}
             </tbody>
         </table>
         <!-- Back Button -->

@@ -36,9 +36,9 @@
       <tbody>
         {% for expense in expenses %}
         <tr>
-          <td>{{ expense[0] }}</td>
           <td>{{ expense[1] }}</td>
           <td>{{ expense[2] }}</td>
+          <td>{{ expense[3] }}</td>
           <td>
             <form action="{{ url_for('remove_expense', id=expense[0]) }}" method="POST">
               <input type="hidden" name="_method" value="DELETE">

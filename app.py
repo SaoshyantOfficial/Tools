@@ -12,10 +12,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Accounting page settings
 
-ACCOUNTING_DATABASE = 'expenses.db'
 USERNAMES = {'yasin': 'bita', 'saleh': 'fatemeh', 'amir': 'adna', 'hamsara' : '1234'}
 
-def get_db():
+def get_db_accounting():
     """Get the SQLite database connection for the current thread."""
     db = getattr(g, '_database', None)
     if db is None:
@@ -26,14 +25,25 @@ def get_db():
 
 
 def fetch_expenses():
-    """function to sum expenses and retrieve expenses"""
-    # Retrieve expenses and calculate the total
-    with get_db() as db:
+    """Function to sum expenses and retrieve expenses."""
+    # Create the "expenses" table if it doesn't exist
+    with get_db_accounting() as db:
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM expenses ORDER BY id")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                topic VARCHAR(50) NOT NULL,
+                value INT(10) NOT NULL
+            )
+        ''')
+
+    # Retrieve expenses and calculate the total
+    with get_db_accounting() as db:
+        cursor = db.cursor()
+        cursor.execute("SELECT ROWID, * FROM expenses ORDER BY id")  # Use ROWID as an alias for id
         expenses = cursor.fetchall()
 
-        total = sum(expense[2] for expense in expenses)
+        total = sum(expense[3] for expense in expenses)
 
         cursor.execute('SELECT topic, SUM(value) FROM expenses GROUP BY topic')
         unique_expenses = dict(cursor.fetchall())
@@ -77,7 +87,7 @@ def add_expense():
     value = int(request.form['value'])
 
     # Insert the expense into the database
-    with get_db() as db:
+    with get_db_accounting() as db:
         cursor = db.cursor()
         cursor.execute("INSERT INTO expenses (topic, value) VALUES (?, ?)", (topic, value))
         db.commit()
@@ -90,10 +100,12 @@ def add_expense():
 
 @app.route('/remove/<id>', methods=['POST'])
 def remove_expense(id):
-    with get_db() as db:
+    with get_db_accounting() as db:
         cursor = db.cursor()
-        cursor.execute("DELETE FROM expenses WHERE id=?", (id,))
-        cursor.execute("UPDATE expenses SET id=id-1 WHERE id > ?", (id,))
+        cursor.execute("DELETE FROM expenses WHERE ROWID=?", (id,))  # Use ROWID as an alias for id
+
+        # Reorganize the ROWIDs to start from 1
+        cursor.execute("UPDATE expenses SET ROWID = ROWID - 1 WHERE ROWID > ?", (id,))
         db.commit()
 
     # Retrieve expenses and total
@@ -333,6 +345,17 @@ def add():
     cursor.execute('SELECT * FROM records')
     records = cursor.fetchall()
     return render_template('records.html', records=records)
+
+@app.route('/records/delete/<int:record_id>', methods=['POST'])
+def delete_record(record_id):
+    if 'username' not in session:
+        return redirect(url_for('records_login'))
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('DELETE FROM records WHERE id = ?', (record_id,))
+    db.commit()
+    return redirect(url_for('add'))
 
 if __name__ == '__main__':
     # app.run(debug=True)
